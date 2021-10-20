@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
+	"github.com/KlintonLee/go-rest-api-course/internal/database"
 	transportHTTP "github.com/KlintonLee/go-rest-api-course/internal/transport/http"
+	"github.com/joho/godotenv"
 )
 
 // App - the struct which contains things like
@@ -13,7 +16,19 @@ type App struct{}
 
 // Run - handles the startup of our application
 func (app *App) Run() error {
+	var err error
 	fmt.Println("Setting up our application")
+
+	err = godotenv.Load(os.ExpandEnv("$GOPATH/src/go-rest-api-course/.env"))
+	if err != nil {
+		return err
+	}
+
+	_, err = database.NewDatabase()
+	if err != nil {
+		return err
+	}
+
 	handler := transportHTTP.NewHandler()
 	handler.SetupRoutes()
 
