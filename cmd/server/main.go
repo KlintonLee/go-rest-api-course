@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/KlintonLee/go-rest-api-course/internal/database"
-	"github.com/KlintonLee/go-rest-api-course/internal/database/models"
+	"github.com/KlintonLee/go-rest-api-course/internal/database/repositories"
 	transportHTTP "github.com/KlintonLee/go-rest-api-course/internal/transport/http"
 	"github.com/joho/godotenv"
 )
@@ -30,9 +30,14 @@ func (app *App) Run() error {
 		return err
 	}
 
-	db.AutoMigrate(&models.Comment{})
+	err = database.MigrateDB(db)
+	if err != nil {
+		return err
+	}
 
-	handler := transportHTTP.NewHandler()
+	commentsRepositoryDb := repositories.CommentsRepositoryDB{Db: db}
+
+	handler := transportHTTP.NewHandler(&commentsRepositoryDb)
 	handler.SetupRoutes()
 
 	if err := http.ListenAndServe(":8080", handler.Router); err != nil {
