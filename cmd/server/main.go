@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/KlintonLee/go-rest-api-course/internal/database"
+	"github.com/KlintonLee/go-rest-api-course/internal/database/models"
 	transportHTTP "github.com/KlintonLee/go-rest-api-course/internal/transport/http"
 	"github.com/joho/godotenv"
 )
@@ -24,10 +25,12 @@ func (app *App) Run() error {
 		return err
 	}
 
-	_, err = database.NewDatabase()
+	db, err := database.NewDatabase()
 	if err != nil {
 		return err
 	}
+
+	db.AutoMigrate(&models.Comment{})
 
 	handler := transportHTTP.NewHandler()
 	handler.SetupRoutes()
