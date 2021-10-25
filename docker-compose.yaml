@@ -1,8 +1,8 @@
-version: "3.7"
+version: "3.8"
 
 services:
-  database:
-    image: postgres
+  db:
+    image: postgres:12.2-alpine
     container_name: postgres_db
     restart: always
     ports:
@@ -12,4 +12,27 @@ services:
       - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=rest_api_course
     volumes:
-      - ./volumes/pgdata:/data/postgres
+      - ./volumes/pgdata:/var/lib/postgresql/data
+    networks:
+      - my_app
+
+  api:
+    build: .
+    container_name: comments-rest-api
+    environment:
+      DB_USERNAME: docker
+      DB_PASSWORD: docker
+      DB_DB: rest_api_course
+      DB_HOST: db
+      DB_TABLE: postgres
+      DB_PORT: 5432
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    networks:
+      - my_app
+
+networks:
+  my_app:
+    driver: bridge
