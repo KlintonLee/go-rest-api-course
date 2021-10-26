@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/KlintonLee/go-rest-api-course/internal/database/repositories"
@@ -40,6 +41,21 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// BasicAuth - a handy middleware function that will provide basic auth around
+// specific endpoints
+func BasicAuth(original func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Info("Basic auth endpoint hit")
+		user, pass, ok := r.BasicAuth()
+		if user == "admin" && pass == "admin" && ok {
+			original(w, r)
+		} else {
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			sendErrorResponse(w, "Not authorized", errors.New("not authorized"))
+		}
+	}
+}
+
 // SetupRoutes - sets up all routes for our application
 func (h *Handler) SetupRoutes() {
 	log.Info("Setting up routes")
@@ -47,10 +63,10 @@ func (h *Handler) SetupRoutes() {
 	h.Router.Use(LoggingMiddleware)
 
 	h.Router.HandleFunc("/api/comments", h.GetAllComments).Methods("GET")
-	h.Router.HandleFunc("/api/comments", h.PostComment).Methods("POST")
+	h.Router.HandleFunc("/api/comments", BasicAuth(h.PostComment)).Methods("POST")
 	h.Router.HandleFunc("/api/comments/{id}", h.GetComment).Methods("GET")
-	h.Router.HandleFunc("/api/comments/{id}", h.UpdateComment).Methods("PUT")
-	h.Router.HandleFunc("/api/comments/{id}", h.DeleteComment).Methods("DELETE")
+	h.Router.HandleFunc("/api/comments/{id}", BasicAuth(h.UpdateComment)).Methods("PUT")
+	h.Router.HandleFunc("/api/comments/{id}", BasicAuth(h.DeleteComment)).Methods("DELETE")
 
 	h.Router.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
